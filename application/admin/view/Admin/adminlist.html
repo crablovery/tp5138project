@@ -1,0 +1,222 @@
+{include file="common/header" /}
+<style type="text/css">
+    .pagination{display:inline-block;padding-left:0;border-radius:4px;float:right}
+    .pagination li{display:inline}
+    .pagination li a,.pagination li span{position:relative;float:left;padding:6px 12px;line-height:1.42857143;color:#393D49;background:#fff;margin:0 0 0 8px;border:1px solid #eee}
+    .pagination li a:hover{color:#fff;background:#1E9FFF}
+    .pagination .active span{background:#1E9FFF;color:#fff}
+    .pagination .disabled{display:none}
+</style>'
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 管理员管理 <span
+        class="c-gray en">&gt;</span> 管理员列表 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px"
+                                               href="javascript:location.replace(location.href);" title="刷新"><i
+        class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <form class="form-horizontal" method="get" id="myform" action="adminlist.html">
+        <div class="text-c">
+            <input type="text" class="input-text" style="width:150px" placeholder="输入账号或真实名字" id="userkey"
+                   name="keyword" value="{$param['keyword']}">
+            <select name="rolegroup" class="input-text" style="width: 100px;">
+                <option value="-1">全 部</option>
+                {volist name="roles" id="role"}
+                <option value="{$role.id}" {if ($param["rolegroup"]==$role.id)}selelcted{/if}>{$role.rolename}</option>
+                {/volist}
+            </select>
+            日期范围：
+            <input type="text" onfocus="selecttime(1)" id="datemin" name="datestart" class="input-text Wdate" style="width:120px;" value="{$param['datestart']}">
+            -
+            <input type="text" onfocus="selecttime(2)" id="datemax" name="dateend" class="input-text Wdate" style="width:120px;"  value="{$param['dateend']}">
+            每页数量:<input type="number" name="pagenum" placeholder="" class="input-text" style="width: 80px"  value="{$param['pagenum']?$param['pagenum']:10}" />
+            <button type="submit" class="btn btn-success" id=""><i class="Hui-iconfont">&#xe665;</i> 搜用户
+            </button>
+        </div>
+    </form>
+    <div class="cl pd-5 bg-1 bk-gray mt-20"><span class="l"><a href="javascript:;" onclick="datadel()"
+                                                               class="btn btn-danger radius"><i class="Hui-iconfont">&#xe6e2;</i> 批量删除</a> <a
+            href="javascript:;" onclick="admin_add('添加管理员','/admin/Admin/add.html','800px','670px')"
+            class="btn btn-primary radius"><i class="Hui-iconfont">&#xe600;</i> 添加管理员</a></span> <span
+            class="r">共有数据：<strong>{$usercount}</strong> 条</span></div>
+    <table class="table table-border table-bordered table-bg" id="userlist">
+        <thead>
+        <tr>
+            <th scope="col" colspan="9">管理员列表</th>
+        </tr>
+        <tr class="text-c">
+            <th width="25"><input type="checkbox"></th>
+            <th width="100">登录名</th>
+            <th width="100">真实名字</th>
+            <th width="150">手机</th>
+            <th width="150">邮箱</th>
+            <th width="80">角色权限</th>
+            <th width="130">加入时间</th>
+            <th width="100">是否已启用</th>
+            <th width="60">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {empty name="$users"}
+        <tr>
+            <td colspan="9" align="center">{$empty|raw}</td>
+        </tr>
+        {/empty}
+        {volist name="users" id="admin"}
+
+        <tr class="text-c">
+            <td><input type="checkbox" value="{$admin.id}" name="adminid[]"></td>
+            <td title="编号：{$admin.id}">{$admin.account}</td>
+            <td>{$admin.realname}【{$admin.sex}】</td>
+            <td>{$admin.mobile}</td>
+            <td>{$admin.email}</td>
+            <td>{$admin.roleid|getAdminRoleName}</td>
+            <td>{$admin.create_time|date='Y-m-d H:i:s'}</td>
+            <td class="td-status">
+                <label title="点击修改当前状态" style="text-decoration:none;cursor: pointer"
+                       onClick="admin_status(this,'{$admin.id}','{$admin.status}')">{$admin.status|getAdminStatus|raw}</label>
+            </td>
+            <td class="td-manage">
+                <a title="编辑" href="javascript:;"
+                   onclick="admin_edit('管理员编辑','{:url(\'admin/edit\',[\'id\'=>$admin.id])}','1','800px','680px')"
+                   class="btn btn-success radius"
+                   style="text-decoration:none;  padding: 2px 4px; line-height: 12px; height: 20px;">
+                    <i class="Hui-iconfont">&#xe647;</i></a>
+                <a title="删除" href="javascript:;" onclick="admin_del(this,'{$admin.id}')" class="btn btn-danger radius"
+                   style="text-decoration:none;  padding: 2px 4px; line-height: 12px; height: 20px;">
+                    <i class="Hui-iconfont">&#xe6e2;</i>
+                </a>
+            </td>
+        </tr>
+        {/volist}
+
+        </tbody>
+    </table>
+    <div class="text-center" style="width: 100%; margin-top: 10px;">
+        {$pages|raw}
+    </div>
+</div>
+{include file="common/footjs" /}
+
+<script type="text/javascript">
+
+    /*管理员-增加*/
+    function admin_add(title, url, w, h) {
+        layer.open({
+            type: 2,
+            title: title,
+            scrollbar: false,
+            minmax: false,
+            area: [w, h],
+            content: url,
+        });
+        //layer_show(title,url,w,h);
+    }
+
+    /*管理员-删除*/
+    function admin_del(obj, id) {
+        layer.confirm('确认要删除吗？', function (index) {
+            $.ajax({
+                type: 'POST',
+                url: '{:url("admin/del")}',
+                data: {"id": id},
+                dataType: 'json',
+                success: function (data) {
+                    if (data.status == "success") {
+                        layer.msg(data.msg, {icon: 1, time: 1000});
+                        window.location.reload();
+                    } else {
+                        layer.msg(data.msg, {icon: 0, time: 1000});
+                        window.location.reload();
+                    }
+                },
+                error: function (data) {
+                    console.log(data.msg);
+                },
+            });
+        });
+    }
+
+    /*管理员-编辑*/
+    function admin_edit(title, url, id, w, h) {
+        layer.open({
+            type: 2,
+            title: title,
+            area: [w, h],
+            content: url,
+        });
+    }
+
+    /*管理员-停用启用*/
+    function admin_status(obj, id, status) {
+
+        //此处请求后台程序，下方是成功后的前台处理……
+        $.post('/admin/Admin/modstatus.html', {'id': id, 'status': status}, function (data) {
+            if (data.status == "success") {
+                layer.alert(data.msg, {
+                    icon: 4,
+                    yes: function () {
+                        window.location.reload();
+                    }
+                });
+            } else {
+                layer.alert(data.msg, {
+                    icon: 1,
+                    yes: function () {
+                        window.location.reload();
+                    }
+                });
+            }
+        });
+    }
+
+    function selecttime(flag) {
+        if (flag == 1) {
+            var endTime = $("#datemax").val();
+            if (endTime != "") {
+                WdatePicker({dateFmt: 'yyyy-MM-dd', maxDate: endTime})
+            } else {
+                WdatePicker({dateFmt: 'yyyy-MM-dd'})
+            }
+        } else {
+            var startTime = $("#datemin").val();
+            if (startTime != "") {
+                WdatePicker({dateFmt: 'yyyy-MM-dd', minDate: startTime})
+            } else {
+                WdatePicker({dateFmt: 'yyyy-MM-dd'})
+            }
+        }
+    }
+
+    function datadel() {
+        var arr = [];
+        $("input:checkbox:checked").each(function (i) {
+            if ($(this).val() != 'on') {
+                arr.push($(this).val());
+            }
+        })
+        if (arr.length != 0) {
+            $.post('{:url("admin/clear")}', {'data': arr}, function (data) {
+                if (data.status == 'success') {
+                    layer.alert(data.msg, {
+                        'icon': 1
+                        , title: '批量删除管理员'
+                        , shadeClose: true
+                        , shade: 0.6
+                        , anim: 1
+                        , yes: function () {
+                            window.location.reload();
+                        }
+                    });
+                } else {
+                    layer.msg(data.msg, {
+                        'icon': 0
+                        , anim: 6
+                    });
+                }
+            });
+        } else {
+            layer.msg("您未选择任何人员，请重新进行选择!", {'icon': 0, time: 3000, anim: 6});
+        }
+    }
+</script>
+
+{include file="common/footer" /}
